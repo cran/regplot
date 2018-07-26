@@ -6,4 +6,5 @@ import(beanplot)
 import(graphics)
 import(stats)
 import(sm)
+importFrom("grDevices", "recordPlot", "replayPlot","col2rgb", "rgb")
 

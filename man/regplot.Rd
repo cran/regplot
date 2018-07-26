@@ -4,69 +4,111 @@
 \alias{regplot}
 \title{Plots a regression nomogram showing covariate distribution.}
 \usage{
-regplot(reg, dummies = FALSE, center = FALSE, observation = NULL,
-  title = NULL, points = TRUE, other = list(bvcol = "#DDEEDD", sqcol =
-  "#EEEEEE", obscol = "red", failtime = NA, prfail = TRUE, ndisc = 5, droplines
-  = FALSE))
+regplot(reg, dummies = FALSE, center = TRUE, observation = NULL,
+  title = NULL, points = TRUE, failtime = NULL, prfail = TRUE,
+  baseS = NULL, odds = FALSE, droplines = FALSE, nsamp = 5000,
+  showi = TRUE, showP = TRUE, rank = NULL, subticks = FALSE,
+  interval = NULL, colors = NULL)
 }
 \arguments{
-\item{reg}{A regression object of either class \code{glm}, \code{lm}, or \code{coxph}  from a fitted model}
+\item{reg}{A regression object of either class \code{glm}, \code{glm.nb}, \code{lm}, \code{survreg} or \code{coxph}}
 
-\item{dummies}{\code{TRUE} to treat dummy indicators of factor variables as distinct binary variables, with their own nomogram row. 
-Otherwise different categories of the factor are represented on the same row.}
+\item{dummies}{\code{TRUE} to treat dummy indicators of factor variables as distinct binary variables, with their own nomogram panel. 
+Otherwise different categories of the factor are represented on the same panel.}
 
 \item{center}{Produces plot in which regression score contributions of continuous data are  plotted with respect 
-to mean values.}
+to mean values of non-factors.}
 
-\item{observation}{An observation whose values
-are superimposed on the plot. A data frame whose column names must include variables used
+\item{observation}{An observation, data frame,  whose values
+are superimposed on the plot. Must include all variables used
  in the regression formula.}
 
 \item{title}{A heading title written to the plot}
 
 \item{points}{If \code{FALSE} the regression scores \eqn{\beta}\eqn{x}  are shown. 
-Otherwise the scale is represented by "points".}
+Otherwise the scale is represented by a 0-100 "points"  scale.}
 
-\item{other}{A \code{list} of other optional parameters for features of the plot. \code{bvcol} is color fill of box and violin plots, 
-\code{sqcol} is color fill of frequency boxes, \code{obscol} is color of observation dots,
-\code{failtime}   specifies the cut-off time for
-plotting the risk  nomogram of a \code{coxph} regression (if \code{failtime=NA}, cut-off is the median of time variable,
- with no account of censoring), \code{prfail=TRUE} if 
-probability of failure before \code{failtime} is summarised, otherwise after \code{failtime}. 
-If the number of unique values of covariate is less than
-\code{ndisc},  discrete frequencies are plotted by scaled boxes. 
- \code{droplines} draws faint vertical lines showing score contributions to an observation.}
+\item{failtime}{Specifies the cut-off time(s) for
+plotting the risk  nomogram of a \code{coxph} or \code{survreg} regression 
+(if \code{failtime=NULL}, cut-off is the median of time variable)}
+
+\item{prfail}{For survival models. \code{TRUE} if 
+probability of failure before \code{failtime} is summarised, otherwise after \code{failtime}.}
+
+\item{baseS}{Only relevant for \code{coxph} regressions and, if non-null, specifies the baseline 
+survival probability, or probabilities, corresponding to the specified \code{failtime} 
+(otherwise this probability is computed within \code{regplot}using function \code{basehaz}).}
+
+\item{odds}{For probability outcomes (logistic, cox and survreg models), 
+the  output nomogram scale is odds rather than probability.}
+
+\item{droplines}{Draws faint vertical lines showing score contributions to an observation.}
+
+\item{nsamp}{The size of a random sample of data to plot distributions 
+(if  huge data plotting may be slow).}
+
+\item{showi}{Whether interactions (if present) are to be shown as a panel of the plot.}
+
+\item{showP}{Whether P-value regression coefficient asterisk codes are to be displayed.}
+
+\item{rank}{Allows  panels to be ranked by importance to the regression. Importance is
+measured by standard deviation along nomogram scales 
+(equivalent to standardized regression coefficients for non-factors) 
+\code{NULL} for no ranking (ordered as the regression), otherwise \code{"decreasing"}
+ or \code{"increasing"}.}
+
+\item{subticks}{Whether to put intervening minor tick marks on axes.}
+
+\item{interval}{draws an interval (confidence or prediction) for outcomes associated with the 
+\code{observation} (see Details)}
+
+\item{colors}{A \code{list} of colors that will override the default colors. May include: \code{dencol} color fill of density plots, 
+\code{boxcol} color fill of frequency boxes, \code{obscol} color of superimposed observation,
+\code{spkcol} color of spikes.}
+}
+\value{
+If \code{points=TRUE} a \code{points.tables} object is returned 
+as a list of dataframes, each frame giving  points per covariate, and a
+total points-to-outcome look-up table.
 }
 \description{
-\code{regplot} plots a regression nomogram of \code{coxph}, \code{lm} and \code{glm}
- regressions. Covariate distributions are superimposed on nomogram scales and the plot
-is animated to allow on the fly changes to distribution representation and to 
+\code{regplot} plots a regression nomogram. Covariate distributions are superimposed on nomogram scales and the plot
+is animated to allow on-the-fly changes to distribution representation and to 
 enable outcome calculation.
 }
 \details{
 Creates a nomogram  representation of a fitted regression. 
-The distribution of covariates in the model, and of the total regression score, are superimposed on the 
-nomogram scales. Also the values of a particular observation can be superimposed. The plot is active for mouse input 
-allowing on-the-fly changes to distribution type (boxes, spikes, box plot, density, violin and bean plots)
-and also to observation values. 
-Assumes that a regression has been fitted by either \code{glm},  \code{lm} or \code{coxph}. For \code{glm},
-the supported family/link pairings are: gaussian/identity, binomial/logit, and  poisson/log.
+The distribution of covariates in the model, and of the total regression score, can be superimposed on the 
+nomogram scales. Also the values of a particular observation can be overlaid, with  outcome calculated. 
+If \code{interval} is specified a (\code{95\%}) confidence interval on the outcome is displayed. 
+For \code{lm} and \code{glm} OLS regressions a prediction interval can be requested.
+The plot is active for mouse input 
+allowing on-the-fly changes to distribution type (boxes, spikes, box plot, density, empirical cdf, violin and bean plots)
+and also to observation values, making it a regression calculator. 
+The regression object \code{reg} parameter must have been fitted by either \code{glm},  \code{lm},  
+\code{survreg}, \code{coxph}  or \code{glm.nb}. For \code{glm},
+the supported family/link pairings are: gaussian/identity, binomial/logit, and  poisson/log. 
+For \code{survreg} the distribution may be lognormal, gaussian, weibull, exponential or loglogistic.
+For \code{glm.nb} (negative binomial regression) only log-link is allowed.
 }
 \examples{
-## Analysis of pbc data
 library(survival)
-data(pbc) 
-pbc$catbili <- cut(pbc$bili,breaks=c(-Inf, 2, 4, Inf),
-               labels=c("low","medium","high"))
-pbc$died <- pbc$status==2
-## Fit a Cox survival model
-pbccox <-  coxph(formula = Surv(time,died) ~  age + catbili + sex + 
-                 log(copper+1) +stage + trt,data=pbc)
-obs <- pbc[1,]
-regplot(pbccox,observation=obs, other=list( failtime = 1825, prfail = TRUE) ) 
-## Fit a glm  logistic regression
-pbcglm <- glm(formula = died ~  age + catbili + sex + copper +stage ,family = "binomial", data=pbc )
-regplot(pbcglm)
+ data(pbc) 
+ pbc$catbili <- cut(pbc$bili,breaks=c(-Inf, 2, 4, Inf),
+                labels=c("low","medium","high"))
+ pbc$died <- pbc$status==2
+ pbccox <-  coxph(formula = Surv(time,died) ~  age + catbili + sex + 
+                  copper +stage + trt,data=pbc)
+ ## Plot a Cox survival model, showing data for the first observation.
+ ## Display risk for 730, and 1825 days
+  regplot(pbccox,observation=pbc[1,],  failtime = c(730,1825), prfail = TRUE ) 
+ ## Plot a Weibull model 
+  pbcweib <-  survreg(formula = Surv(time,died) ~  age + catbili + sex + 
+                  copper +stage + trt,dist="weibull", data=pbc)
+ regplot(pbcweib,observation=pbc[1,], failtime = 1825, prfail = TRUE ) 
+ ## Plot a logistic regression, showing odds scale and confidence interval
+ pbcglm <- glm(died ~  age + catbili + sex + copper,family = "binomial", data=pbc )
+ regplot(pbcglm, observation=pbc[1,], odds=TRUE,interval="confidence")
 }
 \author{
 Roger Marshall <rj.marshall@auckland.ac.nz> The University of Auckland, New Zealand
