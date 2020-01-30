@@ -1,20 +1,20 @@
 Package: regplot
 Type: Package
 Title: Enhanced Regression Nomogram Plot
-Version: 0.2
-Date: 2018-06-01
+Version: 1.0
+Date: 2020-01-10
 Authors@R: person("Roger", "Marshall", role = c("aut", "cre"),
                      email = "rj.marshall@auckland.ac.nz")
-Description: A function to plot a regression nomogram of coxph, lm and glm regression 
+Description: A function to plot a regression nomogram of regression 
     objects. Covariate distributions are superimposed on nomogram scales and the plot
-	is animated to allow on the fly changes to distribution representation and to 
+	can be animated to allow on-the-fly changes to distribution representation and to 
 	enable outcome calculation. 
 License: GPL-2
-Imports: vioplot, sm, beanplot, survival, graphics, stats
-RoxygenNote: 6.0.1
+Imports: vioplot, sm, beanplot, survival, graphics, stats, lme4
+RoxygenNote: 7.0.2
 NeedsCompilation: no
-Packaged: 2018-07-26 02:37:24 UTC; rmar073
+Packaged: 2020-01-30 01:06:09 UTC; rmar073
 Author: Roger Marshall [aut, cre]
 Maintainer: Roger Marshall <rj.marshall@auckland.ac.nz>
 Repository: CRAN
-Date/Publication: 2018-07-26 08:10:06 UTC
+Date/Publication: 2020-01-30 05:50:02 UTC
