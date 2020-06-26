@@ -152,17 +152,16 @@ glm_1 <- function(reg){
      #}
     variable_names <- attr(reg$terms,"term.labels")
   ## variable_names <- gsub("=","",variable_names)
-   ##   
 
-  
   rms       <- (class(reg)[2]=="rms")
   if(is.na(rms)) rms <- FALSE
-  ols.rms <-  (class(reg)[1] == "ols")
+  ols.rms <-  (class(reg)[1] == "ols" )
   Glm.rms <-  (class(reg)[1] == "Glm")
+  lrm.rms <-  (class(reg)[1] == "lrm")
 coefficients <- reg$coefficients
 
   #3   x <- model.matrix( formula(reg), data=reg$model )
-    if(ols.rms){
+    if(ols.rms | lrm.rms){
        x <- model.matrix(reg)}
     else
       {
@@ -170,7 +169,7 @@ coefficients <- reg$coefficients
        }
  
     # ## no re$xlevels for rms:ols , use Design attribute
-   if(ols.rms | Glm.rms) { 
+   if(ols.rms | Glm.rms | lrm.rms) { 
      xlevels <- reg$Design$parms
      }
  # 
@@ -294,7 +293,7 @@ if(length(st) >0){
     }
      }
 ## extract Y variable from formula 
-  if(ols.rms){
+  if(ols.rms | lrm.rms){
 yvar <- names(attr(reg$terms,"dataClasses"))[1]
   }
   else
@@ -452,7 +451,10 @@ if(rms){
 
   }
   ## this is crucial for rms models to match varaible_names
-  ## and have same behaviour as non-rms models
+  ## and have same behaviour as non-rms models.
+  ## but craps out if cph() specified with no intercept
+  ## needs a prior trap on this ? 
+ 
   names(coefficients) <- colnames(x)
   
   }
@@ -643,6 +645,7 @@ if(length(has_surv)==0 ){
 #  }
  
  outcome_names <- strsplit(stripped,",")
+
  yvar <- unlist(outcome_names)[1]
  deadvar <-  unlist(outcome_names)[2]
 
@@ -869,7 +872,9 @@ fixed.varnames <- fixed[-1]
 ## needs a local patch here to determine rcs(), bs() 
 if(class(reg)[1]=="lmerMod"){
   cls <- "lmer"
-  notallowed <- c("rcs()")}
+  notallowed <- c("rcs()")
+ ## rcs() nt allowed because predict() command for it craps out
+  }
 else
 {
   ## cant get anything to work with glmer!!
@@ -888,9 +893,14 @@ banned <- xxx %in% notallowed
 
 if( any(banned) ){
 
-  return(message(paste(
-    "unsupported function(s) ",xxx[which(banned)]," in ",cls," formula")))
+message(paste(
+    "Function(s) ",xxx[which(banned)]," not supported in ",cls," formula"))
  
+  ## make a note why?
+  if(xxx[which(banned)]=="rcs()" & cls=="lmer"){
+    message("because rcs() fails in lmer generic predict() function. Try bs() instead")
+  }
+return() 
 # fail <- TRUE
 # #R <- list(rep(NA,times=17),fail)
 # ## why doesn't rep work here? 
@@ -1533,6 +1543,7 @@ segments(L-(M-L)*0.3 , dialogpos-1.5*gap, M + (M-L)*0.2,dialogpos-1.5*gap, col="
 
      panel <- floor(XY$y -  make_space ) 
      ##message(paste("panel",panel))
+    ## browser()
 ##------------------------------------------------------------------------     
      ##  keyboard Esc press 
     if(length(panel)==0){
@@ -1559,12 +1570,13 @@ segments(L-(M-L)*0.3 , dialogpos-1.5*gap, M + (M-L)*0.2,dialogpos-1.5*gap, col="
        }
 ##-------------------------------------------------------------------------
      
-       if(panel >0 & panel <= npanels){
+      if(panel >0 & panel <= npanels){
+    ## if(panel >0){
        row <- row_of_panel[panel]
        row <- irank[row]
        
-       ## clicked on a slpineplot on rhs of panel. 
-
+## clicked on a slpineplot thumbnail  on rhs of panel. 
+##browser()
        if( kernel_varname[row] != "" &  XY$x > M ){
          splineplot <- !splineplot
          nudist <- TRUE
@@ -1580,8 +1592,11 @@ segments(L-(M-L)*0.3 , dialogpos-1.5*gap, M + (M-L)*0.2,dialogpos-1.5*gap, col="
     ##message(paste("plotselect=",plot_select))
   ##---------------------------------------------------
  ## click on dialog PLOTS area
- if( plot_select <=13 & plot_select >= 0 & panel > npanels){ 
- ##  cplot <- NA
+## if( plot_select <=13 & plot_select >= 0 & panel > npanels){ 
+ ##browser()
+ ## ensure clicked above points line     
+      if( plot_select <=13 & plot_select >= 0 & XY$y > npanels+make_space+1.5){ 
+        ##  cplot <- NA
   if(plot_select <= 2)  cplot <- "no plot" 
   if(plot_select == 3)  cplot <- "density"
   if(plot_select == 4)  cplot <- "boxes" 
@@ -1969,7 +1984,7 @@ Poisson_scale  <- function(tot_score,intercept,L,M,Range,Min_tot_score,delta,
  ## tickpos <-  tickpos[limits]  
   ##prettymean <- prettymean[limits]
  ##   
-sievePr <- sieve(tickpos,prettymean, 0.1*(M-L))
+sievePr <- sieve(tickpos,prettymean, 0.04*(M-L))
 
 Xpos <- unlist(sievePr[1])
 Pr <-   unlist(sievePr[2])
@@ -1977,7 +1992,7 @@ Pr <-   unlist(sievePr[2])
 if(!showsubticks) tickpos <- Xpos
 
   
-  limits <- which(tickpos > L-0.1*(M-L) & tickpos < M+0.1*(M-L) )
+  limits <- which(tickpos > L-0.1*(M-L) & tickpos < M+0.04*(M-L) )
 
   if(length(limits) > 2){
   tickpos <- tickpos[limits]
@@ -2122,7 +2137,7 @@ prettyprobs  <-  prettyprobs[limits]
 }
 
  
-sievePr <- sieve(tickpos,prettyprobs, 0.08*(M-L))
+sievePr <- sieve(tickpos,prettyprobs, 0.04*(M-L))
 
 Xpos <- unlist(sievePr[1])
 Pr <-   unlist(sievePr[2])
@@ -2186,7 +2201,7 @@ probit_scale <- function(tot_score,intercept,L,M,Range,Min_tot_score,delta,
    }
    
    
-   sievePr <- sieve(tickpos,prettyprobs, 0.08*(M-L))
+   sievePr <- sieve(tickpos,prettyprobs, 0.04*(M-L))
    
    Xpos <- unlist(sievePr[1])
    Pr <-   unlist(sievePr[2])
@@ -2333,7 +2348,7 @@ probit_scale <- function(tot_score,intercept,L,M,Range,Min_tot_score,delta,
  
  prettyX  <-  prettyX[limits] 
 }
-sievePr <- sieve(tickpos,prettyX, 0.08*(M-L))
+sievePr <- sieve(tickpos,prettyX, 0.04*(M-L))
 
 Xpos <- unlist(sievePr[1])
 Pr <-   unlist(sievePr[2])
@@ -2516,7 +2531,7 @@ if(length(limits)>2){
  prettyX  <-  prettyX[limits]
 }
   
-sievePr <- sieve(tickpos,prettyX, 0.08*(M-L))
+sievePr <- sieve(tickpos,prettyX, 0.04*(M-L))
 
 Xpos <- unlist(sievePr[1])
 Pr <-   unlist(sievePr[2])
@@ -2713,7 +2728,7 @@ if(length(limits) > 2){
  prettyT<-  prettyT[limits]
 }
 
-sievemedsurv <- sieve(tickpos,prettyT, 0.08*(M-L))
+sievemedsurv <- sieve(tickpos,prettyT, 0.04*(M-L))
 
 Xpos <- unlist(sievemedsurv[1])
 medsurv <-   unlist(sievemedsurv[2])
@@ -2873,11 +2888,18 @@ Cox_scalemedsurv <- function(reg, tot_score,intercept,L,M,Range,Min_tot_score,de
  tickpos <- (M-L)* (prettyscores  - Min_tot_score)/Range + L
  
 if(length(tickpos)==0) {
-msg <- "Cannot compute quantile axis"
+msg <- "Cannot compute quantile scale"
+
   if(nstrata>0){
-    msg <- c(msg, paste(" for stratum",slevels[istrata]) )
+    msg <- c(msg, paste(" for",strata_levels[istrata]) )
   }
-message(msg)}
+message(msg)
+
+}  #if(length(tickpos)==0)
+ 
+ else  ## of if(length(tickpos)==0)
+   
+ {   
  
 
  limits <- which(tickpos > L-0.1*(M-L) & tickpos < M+0.1*(M-L) )
@@ -2887,7 +2909,7 @@ message(msg)}
  }
  
 
-sievemedsurv <- sieve(tickpos,prettyT, 0.08*(M-L))
+sievemedsurv <- sieve(tickpos,prettyT, 0.04*(M-L))
 
 Xpos <- unlist(sievemedsurv[1])
 medsurv <- unlist(sievemedsurv[2])
@@ -2914,7 +2936,7 @@ prettyT <- medsurv
     cex=cexscales,font=3,col="blue")
  }  ##if(nstrata >1)
  
- 
+  }  ## else of if(length(tickpos)==0)
  
 }  ##for(istrata...
    
@@ -3029,8 +3051,24 @@ return()
 ## function to  delete (sieve out) too many tick axis marks 
 ## usage sieve(tickpos,prettymean, 0.08*(M-L))
 ## separation must be > c
-sieve <- function(x,v,c){
+sieve <- function(x,v,cfract){
+  
+  if(length(x)==0 | length(x)==0){
+    sievedv <- v
+    sievedx <- x 
+    kept <- NULL
+    return(list(sievedx,sievedv,kept))
+  }
+  sievedv <- v
+  sievedx <- x 
   n <- length(x)
+  ## are points ordered? Only sieve ordered scales?
+  ## no, doesn't work well
+  # ord <- order(x)
+  
+  # kept <- seq(1:n)
+  # if( TRUE | all(ord==seq(1:n))  |  all(ord==rev(seq(1:n)))  ){
+ if(TRUE){
    i <- 2
   xp <- x[1]
  
@@ -3047,7 +3085,7 @@ sieve <- function(x,v,c){
     
     ##d <- min(abs(x[i] -x[i-1]),abs(x[i]-x[i+1]))
      d <- abs(x[i] -xp)
-     if(d >= c) { xp <- x[i]
+     if(d >= cfract) { xp <- x[i]
                  keep[i] <- TRUE
                  }
      
@@ -3072,7 +3110,12 @@ sieve <- function(x,v,c){
   # if(length(kept)==1) { keep[1] <- TRUE
   # kept <- which(keep==TRUE)}
   # 
- 
+  ## keep max or min?
+  kmax <- which(x==max(x))
+  kmin <- which(x==min(x))
+  keep[kmax] <- TRUE
+  keep[kmin] <- TRUE
+  
  keep[1] <- TRUE
 # keep[n] <- TRUE
  kept <- which(keep==TRUE)
@@ -3092,9 +3135,23 @@ sieve <- function(x,v,c){
  ##     
   sievedv <- v[kept]
   sievedx <- x[kept] 
-
-  
-  
+}
+##browser()
+## overcrowded text  
+maxchar <- max(nchar(paste(sievedv)))
+## why XXX=4? or #  Trial and error.
+XXX <- 1.5
+## how many characters can be packed into scale?
+## if allowing cfract space for each character
+## this is max(sievedx)-min(sievedx)/cfract 
+## use XXX to compensate for spaces??
+##browser()
+if(length(sievedv)*maxchar > XXX*( (max(sievedx)-min(sievedx))/cfract)  ) 
+{ odd <- seq(1,length(sievedv),by=2)
+## take out even numbered 
+sievedv <- sievedv[odd]
+sievedx <- sievedx[odd] 
+}
   return (list(sievedx,sievedv,kept))
 }
 
@@ -3428,7 +3485,7 @@ if(cox ){
    
    ## only interested in SElp ???
     lp <- lp[1]
-   # ## with newdata=0, trick gives alue for xb zeroes
+   # ## with newdata=0, trick gives value for xb zeroes
    # ##  doesn't work for coxph predict. So need to use alt. way 
    # ##  for coxph.
    # ## this trick doesnt work either e.g if log(Age) in the formula!!
@@ -3874,7 +3931,7 @@ if(!ImpIsExp(p)){
 
       if(is.na(inv.expression)){
       var <- kernel 
-      message(expression, " in formula not recognised/invertable.")  
+      message(expression, " in formula not supported.")  
       return(c(var,""))
      }
 
@@ -4448,7 +4505,7 @@ remo <- function(v,w,xlevels){
   ##  for which "TRUE" and "FALSE" values are omitted from
   ## vars[i].  eg. input w may have something like
   ##  maori:pacific. With non-rms this may be maoriTRUE:pacificTRUE
-  ## so when "moari" is stripped out left with  ":pacific"
+  ## so when "maori" is stripped out left with  ":pacific"
   ## rather than  TRUE:pacific. And on last cylce need to post-append
   ## later:  this should never be required since 
   ##  patching of parameter coefficient names done earlier
@@ -4457,11 +4514,13 @@ remo <- function(v,w,xlevels){
  ##  if(frst==":") w <- paste0("TRUE",w)
  ## last <- substr(w,start=nchar(w),stop=nchar(w))
   ## if(last==":") w <- paste0(w,"TRUE")
-  ## use  & rather than  : connector
+  ## use  & rather than  : connector ??? 
   
  ##  
   }
-   w <- gsub(pattern=":", replacement=" & ",x=w, fixed = TRUE)
+  
+  ## & or : sign?  Use : I think. June 2020
+#   w <- gsub(pattern=":", replacement=" & ",x=w, fixed = TRUE)
    w <- c(ref,w) 
     return(w)
 }
@@ -4475,6 +4534,8 @@ revo <- function(v, variable_names){
   ## as  "Age(sexF)".
   ## It assumes main effects Age and sex are in variable_names
  ## v <- gsub(":", " * ", v, fixed = TRUE)
+  
+  ##?? I think v always unary?? Leave as is. 
   nv <- length(v)
   for (i in 1:nv){
   sv <- unlist(strsplit(v[i],":")) 
@@ -4494,8 +4555,12 @@ revo <- function(v, variable_names){
 
   
  mult <- paste(sv[cont], collapse=":")
- v[i] <- paste0(  mult, paste0(" (",sv[fact],") ",collapse=" ") ,collapse=" ")
-}
+
+
+
+ v[i] <- paste0(  mult,"(", paste0(sv[fact],collapse=" ") ,collapse=" ",")")
+
+ }
   
 
   }  
@@ -4550,20 +4615,22 @@ rawrange <- maxrawx - minrawx
 rawXscale <- ipos + 0.1 + 0.65*(rawX-minrawx)/rawrange
 col <- "#333333" 
  if(splineplot){
-##show spline plot
+##show spline plot thumbnail on righr
 
 rect(min(Xscale),min(rawXscale ),max(Xscale),max(rawXscale ),col=NA,border=col)
 
 points(Xscale,rawXscale, pch=21,cex=0.35,col="blue")
 
 lines(Xscale,rawXscale, pch=21,cex=0.35,col="blue")
-text((max(Xscale)+2*min(Xscale))/3,ipos + 0.05 ,row_names,adj=0,col=col, cex=cexcats)
+## axis labels horizontal
+text((max(Xscale)+2*min(Xscale))/3,ipos + 0.05 ,row_names,adj=0.5,col=col, cex=cexcats)
+## vertical
 text(min(Xscale),ipos+0.6,raw_row_names,adj=1,col=col,cex=cexcats)
 } 
 
 else
   {
-    ## show a mark
+    ## show a greyed out mark
     points((min(Xscale)+max(Xscale))/2,(max(rawXscale )+min(rawXscale))/2, pch=25,cex=1,col="gray")
   } 
     ##if(splineplot)
@@ -4602,7 +4669,7 @@ if(FIRSTRUN){
    ticks <- ticks[w]
    }
   
- ## determine which vlaues of X correspond to 
+## determine which values of X correspond to 
 ## get tick positions corresponding to ticks.
 ## these may be unknown, if for example, lowest tick is 
   ## less than observable value of rawX.
@@ -4662,7 +4729,7 @@ tickval    <-  tickval[w]
  
 
 if(TRUE){
- sv  <- sieve(ticks_pos,ticks, 0.05*(M-L))
+ sv  <- sieve(ticks_pos,ticks, 0.04*(M-L))
 
 ticks_pos <- unlist(sv[1])
 tickval <-   unlist(sv[2])
@@ -4678,9 +4745,14 @@ dt <- c(dt[1],dt)
 above <- (dt<0)
 pm <- 2*above -1 
 
-segments(min(ticks_pos),ipos,max(ticks_pos),ipos,col=axcol)
+
+##browser()
+##  extend axis to match data 
+segments(min(X),ipos,max(X),ipos,col=axcol)
+
+##segments(min(ticks_pos),ipos,max(ticks_pos),ipos,col=axcol)
 segments(ticks_pos,ipos,ticks_pos,ipos - ltick,col=axcol)
-## after seiving, not establish new wrap point
+## after sieving, not establish new wrap point
 # if(wrap){
 #   xpos <- which(ticks_pos < wrappoint) }
 
@@ -4710,9 +4782,14 @@ plot_caxis <- function(X,i,mean,nmax,Beta,isint,row_names,
   
   ticks     <- pretty(X[,i]+mean,n=nmax) 
   
+ Xmax <- max(X[,i]+mean)
+ Xmin <- min(X[,i]+mean)
+ ## on graphing scale
  
-
-  tickval <- ticks
+ Xmax <- Xmax*Beta -mean*Beta 
+ Xmin <- Xmin*Beta -mean*Beta 
+ 
+ tickval <- ticks
   func <- NA
  ## v <- row_names[i]
 
@@ -4780,6 +4857,10 @@ ticks_pos  <-  ticks_pos[w]
 ticks      <-  ticks[w]
 tickval    <-  tickval[w]
 ## add the scale for this variable panel
+## last tick end of axis of max/min X? 
+## ans both?? 
+segments(Xmin,ipos,Xmax,ipos,col=axcol)
+##browser()
 
 segments(min(ticks_pos),ipos,max(ticks_pos),ipos,col=axcol)
 segments(ticks_pos,ipos,ticks_pos,ipos - ltick,col=axcol)
@@ -4788,7 +4869,7 @@ segments(ticks_pos,ipos,ticks_pos,ipos - ltick,col=axcol)
 if(subt ) {
   subticksf(ticks_pos,ticks,ipos,stick,func=func,axcol=axcol)}
   
-## axis  values  
+## add axis  values  
 text(x=ticks_pos,y= ipos-delta,paste(tickval),cex=cexcats,col=axcol)
 
 return(list(ticks_pos,tickval,ticks))
@@ -4882,7 +4963,7 @@ baseht <- function(H,h,stratum, betas,m) {
     hz <- hz[o]
     lp <- length(hz)
     tmax <- t[lp]
-    
+    if( length(which( hz < H)) == 0)return(NA)
     it <- max(which( hz < H))
     ##print(c(it,hz[it],H) ) 
 
@@ -5165,4 +5246,36 @@ ImpIsExp <- function(x){
     }
   )
 }
+###############################################
+inter_coeff <- function(nms_arefact,nms_coefficients){
+  
+  ## function to determine the number of regression coefficinets 
+  ## that  refer to an interaction between elements of "arefact"
+  ## eg nms_arefact= c("age","sex") and \
+  ## coefficients  c("age10", "sexF"  "sexF:age10", "sexF:age20"))
+  na <- length(nms_arefact)
+  nc <- length(nms_coefficients)
+  nterms <- 0
 
+  for(i in 1:nc){
+    XXX <- unlist(strsplit(nms_coefficients[i],split=":"))
+##browser()
+    if(length(XXX)==na){
+      incl <- TRUE
+
+      for (j in 1:na){
+
+        # hasv <- grep(nms_arefact[j] , XXX)
+        # if(length(hasv) == 0) incl <- FALSE
+        ## better to check first position, ordering is ensured 
+  ## browser()
+        
+        hasv <- nms_arefact[j]== substr( XXX[j],start=1,stop=nchar(nms_arefact[j]) )
+        if(!hasv) incl <- FALSE
+      }
+      nterms <- nterms + incl
+    }
+    
+  }
+  return(nterms)
+}

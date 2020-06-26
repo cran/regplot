@@ -1,8 +1,8 @@
 Package: regplot
 Type: Package
 Title: Enhanced Regression Nomogram Plot
-Version: 1.0
-Date: 2020-01-10
+Version: 1.1
+Date: 2020-07-01
 Authors@R: person("Roger", "Marshall", role = c("aut", "cre"),
                      email = "rj.marshall@auckland.ac.nz")
 Description: A function to plot a regression nomogram of regression 
@@ -13,8 +13,8 @@ License: GPL-2
 Imports: vioplot, sm, beanplot, survival, graphics, stats, lme4
 RoxygenNote: 7.0.2
 NeedsCompilation: no
-Packaged: 2020-01-30 01:06:09 UTC; rmar073
+Packaged: 2020-06-25 21:51:00 UTC; rmar073
 Author: Roger Marshall [aut, cre]
 Maintainer: Roger Marshall <rj.marshall@auckland.ac.nz>
 Repository: CRAN
-Date/Publication: 2020-01-30 05:50:02 UTC
+Date/Publication: 2020-06-26 05:30:02 UTC

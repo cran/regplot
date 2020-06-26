@@ -7,5 +7,5 @@ import(graphics)
 import(stats)
 import(sm)
 import(lme4)
-importFrom("grDevices", "recordPlot", "replayPlot")
+importFrom("grDevices", "recordPlot", "replayPlot","dev.off","dev.cur")
 
